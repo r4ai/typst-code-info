@@ -1,0 +1,14 @@
+[package]
+name = "code-info"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1.0.86"
+serde = { version = "1.0.207", features = ["derive"] }
+serde_json = "1.0.124"
+similar = "2.6.0"
+wasm-minimal-protocol = { git = "https://github.com/astrale-sharp/wasm-minimal-protocol/" }
