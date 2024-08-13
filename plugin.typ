@@ -233,10 +233,10 @@
                 else if show-deleted { rgb("#ffd9d9") }
                 else { rgb(0,0,0,0) }
 
-              let line-number = if line.old_index != none {
-                  line.old_index + 1
-                } else if line.new_index != none {
+              let line-number = if line.new_index != none {
                   line.new_index + 1
+                } else if line.old_index != none {
+                  line.old_index + 1
                 } else {
                   none
                 }
@@ -252,10 +252,10 @@
 
               let line-content = if line.tag == "Spacer" {
                   text(fill: line-number-color, line.content)
-                } else if line.old_index != none {
-                  code-lines-before.at(line.old_index)
                 } else if line.new_index != none {
                   code-lines-after.at(line.new_index)
+                } else if line.old_index != none {
+                  code-lines-before.at(line.old_index)
                 } else {
                   none
                 }
