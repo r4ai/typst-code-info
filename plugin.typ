@@ -1,4 +1,5 @@
-#let plugin = plugin("./target/wasm32-unknown-unknown/release/code_info.wasm");
+#let PLUGIN_WASM_PATH = "./target/wasm32-unknown-unknown/release/code_info.wasm"
+#let plugin = plugin(PLUGIN_WASM_PATH);
 
 #let to-string(content) = {
   if type(content) == "string" {
@@ -77,6 +78,8 @@
 
 #let diff-code-state = state("diff-code", default-diff-code)
 
+#let typst-label = label
+
 #let code-block(
   caption: none,
   label: none,
@@ -117,7 +120,7 @@
       line()
     },
   ) #if label != none {
-    label(label)
+    typst-label(label)
   }
   #h(2em)
 ]

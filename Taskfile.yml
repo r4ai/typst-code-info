@@ -1,0 +1,19 @@
+version: "3"
+
+tasks:
+  build:
+    cmds:
+      - cargo build --release
+      - deno run --allow-read --allow-write .github/scripts/build-plugin.ts
+
+  install:
+    deps:
+      - build
+    cmds:
+      - deno run --allow-read --allow-write --allow-env .github/scripts/install.ts
+
+  gen-readme:
+    deps:
+      - build
+    cmds:
+      - deno run --allow-read --allow-write --allow-env --allow-sys --allow-run --allow-net .github/scripts/typst2svg.ts .github/fixtures/diff.typ .github/fixtures/line-numbers.typ .github/fixtures/caption-and-label.typ

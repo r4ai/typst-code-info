@@ -2,5 +2,6 @@
   "[typst]": {
     "editor.formatOnSave": true
   },
-  "tinymist.formatterMode": "typstyle"
+  "tinymist.formatterMode": "typstyle",
+  "deno.enable": true
 }

@@ -1,0 +1,7 @@
+[package]
+name = "code-info"
+version = "0.1.0"
+entrypoint = "plugin.typ"
+authors = ["Rai"]
+lincese = "MIT"
+description = "This is a library to display code blocks with extra information like captions, line numbers, diff highlights, etc."
