@@ -1,6 +1,14 @@
 #let PLUGIN_WASM_PATH = "./target/wasm32-unknown-unknown/release/code_info.wasm"
 #let plugin = plugin(PLUGIN_WASM_PATH);
 
+#let ADDED_LINE_TEXT_COLOR = rgb("#228b22")
+#let ADDED_LINE_BG_COLOR = rgb("#d6f2c7")
+#let DELETED_LINE_TEXT_COLOR = rgb("b22222")
+#let DELETED_LINE_BG_COLOR = rgb("#ffd9d9")
+#let HIGHLIGHTED_LINE_BG_COLOR = rgb("#cfecfc")
+#let LINE_TEXT_COLOR = gray
+#let LINE_BG_COLOR = rgb(0, 0, 0, 0)
+
 #let to-string(content) = {
   if type(content) == "string" {
     content
@@ -42,7 +50,7 @@
   added-lines: (),
   deleted-lines: (),
   diff: false,
-  always-show-lines: (),
+  always-show-lines: none,
 )
 
 #let code-info-state = state("code-info", default-code-info)
@@ -156,254 +164,210 @@
       },
     )
 
-    let code-block-content = grid(
-      columns: if show-line-numbers {
-        (auto, 1fr)
+    if (is-diff and cur-diff-code.before == none and cur-diff-code.after == none) {
+      diff-code-state.update((
+        before: it,
+        after: none,
+      ))
+    } else {
+      let code-content-before = if cur-diff-code.before == none {
+        it
       } else {
-        (1fr)
-      },
-      inset: 0.3em,
-      align: left + top,
-      stroke: none,
-      ..it
-        .lines
-        .map(line => {
-            let line-number = line.number + start-line - 1
-            let show-highlighted = highlighted-lines.contains(line-number)
-            let show-added = added-lines.contains(line-number)
-            let show-deleted = deleted-lines.contains(line-number)
-            let line-number-color = if show-added {
-              rgb("#228b22")
-            } else if show-deleted {
-              rgb("b22222")
-            } else {
-              gray
-            }
-            let line-bg-color = if show-highlighted {
-              rgb("#cfecfc")
-            } else if show-added {
-              rgb("#d6f2c7")
-            } else if show-deleted {
-              rgb("#ffd9d9")
-            } else {
-              rgb(0, 0, 0, 0)
-            }
+        cur-diff-code.before
+      }
+      let code-content-after = it
 
-            let line-number-content = grid.cell(
-              inset: (right: 1.2em),
-              text(
-                fill: line-number-color,
-                weight: if show-added or show-deleted {
-                  "bold"
-                } else {
-                  "regular"
-                },
-                str(line-number),
-              ),
-            )
-            if show-line-numbers {
-              (
-                line-number-content,
-                grid.cell(
-                  fill: line-bg-color,
-                  line,
+      let code = parse-diff-code(
+        always-show-lines: if is-diff {
+          if always-show-lines == none {
+            ()
+          } else {
+            always-show-lines
+          }
+        } else {
+          if always-show-lines == none {
+            array.range(1, it.lines.len() + 1)
+          } else {
+            always-show-lines
+          }
+        },
+        code-content-before,
+        code-content-after,
+      )
+
+      let code-lines-before = code-content-before.lines
+      let code-lines-after = code-content-after.lines
+
+      let code-block-content = grid(
+        columns: if show-line-numbers and is-diff {
+          (auto, auto, 1fr)
+        } else if show-line-numbers or is-diff {
+          (auto, 1fr)
+        } else {
+          (1fr)
+        },
+        inset: (y: 0.3em),
+        align: left + top,
+        stroke: none,
+        ..code
+          .to_show_lines
+          .enumerate()
+          .map(((index, line)) => {
+              let show-highlighted = highlighted-lines.contains(index)
+              let show-added = line.tag == "Insert"
+              let show-deleted = line.tag == "Delete"
+              let line-number-color = if show-added {
+                ADDED_LINE_TEXT_COLOR
+              } else if show-deleted {
+                DELETED_LINE_TEXT_COLOR
+              } else {
+                LINE_TEXT_COLOR
+              }
+              let line-bg-color = if show-highlighted {
+                HIGHLIGHTED_LINE_BG_COLOR
+              } else if show-added {
+                ADDED_LINE_BG_COLOR
+              } else if show-deleted {
+                DELETED_LINE_BG_COLOR
+              } else {
+                LINE_BG_COLOR
+              }
+
+              let line-number = if line.new_index != none {
+                line.new_index + 1
+              } else if line.old_index != none {
+                line.old_index + 1
+              } else {
+                none
+              }
+              let line-number-content = grid.cell(
+                fill: line-bg-color,
+                inset: (left: 0.3em, right: 1.2em),
+                text(
+                  fill: line-number-color,
+                  weight: if show-added or show-deleted {
+                    "bold"
+                  } else {
+                    "regular"
+                  },
+                  if line-number == none {
+                    ""
+                  } else {
+                    str(line-number)
+                  },
                 ),
               )
-            } else {
-              grid.cell(
-                inset: (x: 1.2em),
+
+              let line-content = if line.tag == "Spacer" {
+                text(fill: line-number-color, line.content)
+              } else if line.new_index != none {
+                code-lines-after.at(line.new_index)
+              } else if line.old_index != none {
+                code-lines-before.at(line.old_index)
+              } else {
+                none
+              }
+
+              let line-tag-content = grid.cell(
                 fill: line-bg-color,
-                line,
+                inset: (
+                  left: if show-line-numbers {
+                    0em
+                  } else {
+                    1.2em
+                  },
+                  right: 0.5em,
+                ),
+                text(
+                  fill: line-number-color,
+                  if line.tag == "Insert" {
+                    "+"
+                  } else if line.tag == "Delete" {
+                    "-"
+                  } else {
+                    " "
+                  },
+                ),
               )
-            }
-          })
-        .flatten()
-    )
 
-    if (is-diff) {
-      if (cur-diff-code.before == none and cur-diff-code.after == none) {
-        diff-code-state.update((
-          before: it,
-          after: none,
-        ))
-      } else {
-        let code-content-before = cur-diff-code.before
-        let code-content-after = it
-
-        let diff-code = parse-diff-code(
-          always-show-lines: always-show-lines,
-          code-content-before,
-          code-content-after,
-        )
-
-        let code-lines-before = code-content-before.lines
-        let code-lines-after = code-content-after.lines
-
-        let code-block-content = grid(
-          columns: if show-line-numbers {
-            (auto, auto, 1fr)
-          } else {
-            (auto, 1fr)
-          },
-          inset: (y: 0.3em),
-          align: left + top,
-          stroke: none,
-          ..diff-code
-            .to_show_lines
-            .enumerate()
-            .map(((index, line)) => {
-                let show-highlighted = highlighted-lines.contains(index)
-                let show-added = line.tag == "Insert"
-                let show-deleted = line.tag == "Delete"
-                let line-number-color = if show-added {
-                  rgb("#228b22")
-                } else if show-deleted {
-                  rgb("b22222")
-                } else {
-                  gray
-                }
-                let line-bg-color = if show-highlighted {
-                  rgb("#cfecfc")
-                } else if show-added {
-                  rgb("#d6f2c7")
-                } else if show-deleted {
-                  rgb("#ffd9d9")
-                } else {
-                  rgb(0, 0, 0, 0)
-                }
-
-                let line-number = if line.new_index != none {
-                  line.new_index + 1
-                } else if line.old_index != none {
-                  line.old_index + 1
-                } else {
-                  none
-                }
-                let line-number-content = grid.cell(
+              if line.tag == "Spacer" {
+                grid.cell(
                   fill: line-bg-color,
-                  inset: (left: 0.3em, right: 1.2em),
-                  text(
-                    fill: line-number-color,
-                    weight: if show-added or show-deleted {
-                      "bold"
-                    } else {
-                      "regular"
-                    },
-                    if line-number == none {
-                      ""
-                    } else {
-                      str(line-number)
-                    },
+                  inset: (y: 1em),
+                  colspan: if show-line-numbers {
+                    3
+                  } else {
+                    2
+                  },
+                  {
+                    let height = 9pt
+                    let gap = 6pt
+                    let stroke = (
+                      paint: line-number-color,
+                      thickness: 1pt,
+                      cap: "round",
+                    )
+                    let wavy-line = pattern(size: (13pt, height))[
+                      #place(
+                        path(
+                          stroke: stroke,
+                          ((0pt, 1pt), (-25%, 0pt)),
+                          ((50%, height - gap), (-25%, 0pt)),
+                          ((100%, 1pt), (-25%, 0pt)),
+                        ),
+                      )
+                      #place(
+                        path(
+                          stroke: stroke,
+                          ((0pt, gap), (-25%, 0pt)),
+                          ((50%, height - 1pt), (-25%, 0pt)),
+                          ((100%, gap), (-25%, 0pt)),
+                        ),
+                      )
+                    ]
+                    rect(fill: wavy-line, width: 100%, height: height)
+                  },
+                )
+              } else if is-diff and show-line-numbers {
+                (
+                  line-number-content,
+                  line-tag-content,
+                  grid.cell(
+                    inset: (right: 0.3em),
+                    fill: line-bg-color,
+                    line-content,
                   ),
                 )
-
-                let line-content = if line.tag == "Spacer" {
-                  text(fill: line-number-color, line.content)
-                } else if line.new_index != none {
-                  code-lines-after.at(line.new_index)
-                } else if line.old_index != none {
-                  code-lines-before.at(line.old_index)
-                } else {
-                  none
-                }
-
-                let line-tag-content = grid.cell(
-                  fill: line-bg-color,
-                  inset: (
-                    left: if show-line-numbers {
-                      0em
-                    } else {
-                      1.2em
-                    },
-                    right: 0.5em,
-                  ),
-                  text(
-                    fill: line-number-color,
-                    if line.tag == "Insert" {
-                      "+"
-                    } else if line.tag == "Delete" {
-                      "-"
-                    } else {
-                      " "
-                    },
+              } else if is-diff {
+                (
+                  line-tag-content,
+                  grid.cell(
+                    inset: (right: 1.2em),
+                    fill: line-bg-color,
+                    line-content,
                   ),
                 )
-
-                if line.tag == "Spacer" {
+              } else if show-line-numbers {
+                (
+                  line-number-content,
                   grid.cell(
                     fill: line-bg-color,
-                    inset: (y: 1em),
-                    colspan: if show-line-numbers {
-                      3
-                    } else {
-                      2
-                    },
-                    {
-                      let height = 9pt
-                      let gap = 6pt
-                      let stroke = (
-                        paint: line-number-color,
-                        thickness: 1pt,
-                        cap: "round",
-                      )
-                      let wavy-line = pattern(size: (13pt, height))[
-                        #place(
-                          path(
-                            stroke: stroke,
-                            ((0pt, 1pt), (-25%, 0pt)),
-                            ((50%, height - gap), (-25%, 0pt)),
-                            ((100%, 1pt), (-25%, 0pt)),
-                          ),
-                        )
-                        #place(
-                          path(
-                            stroke: stroke,
-                            ((0pt, gap), (-25%, 0pt)),
-                            ((50%, height - 1pt), (-25%, 0pt)),
-                            ((100%, gap), (-25%, 0pt)),
-                          ),
-                        )
-                      ]
-                      rect(fill: wavy-line, width: 100%, height: height)
-                    },
-                  )
-                } else if show-line-numbers {
-                  (
-                    line-number-content,
-                    line-tag-content,
-                    grid.cell(
-                      inset: (right: 0.3em),
-                      fill: line-bg-color,
-                      line-content,
-                    ),
-                  )
-                } else {
-                  (
-                    line-tag-content,
-                    grid.cell(
-                      inset: (right: 1.2em),
-                      fill: line-bg-color,
-                      line-content,
-                    ),
-                  )
-                }
-              })
-            .flatten()
-        )
+                    line-content,
+                  ),
+                )
+              } else {
+                grid.cell(
+                  inset: (x: 1.2em),
+                  fill: line-bg-color,
+                  line-content,
+                )
+              }
+            })
+          .flatten()
+      )
 
-        code-info-state.update(default-code-info)
-        diff-code-state.update(default-diff-code)
-
-        code-block(
-          caption: cur-code-info.caption,
-          label: cur-code-info.label,
-          supplement: supplement,
-          mono-font: mono-font,
-          code-block-content,
-        )
-      }
-    } else {
       code-info-state.update(default-code-info)
+      diff-code-state.update(default-diff-code)
 
       code-block(
         caption: cur-code-info.caption,
