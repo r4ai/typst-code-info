@@ -4,14 +4,16 @@ This is a library to display code blocks with extra information like captions, l
 
 ## Features
 
-- Line numbers
+- Show line numbers
 - Calculate diff between two code blocks and highlight the differences
 - Highlighting of specific lines
-- Captions
+- Display captions
 
 ## Installation
 
 - **From local source**:
+
+  Clone the repository and run the following command:
 
   ```bash
   task install
