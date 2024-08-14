@@ -15,6 +15,7 @@ pub fn add(a: i32, b: i32) -> i32 {
 #code-info(
   diff: true,
   show-line-numbers: true,
+  highlighted-lines: (1,),
   always-show-lines: (1, 14, 15),
 )
 ```rust

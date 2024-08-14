@@ -47,8 +47,6 @@
   show-line-numbers: false,
   start-line: 1,
   highlighted-lines: (),
-  added-lines: (),
-  deleted-lines: (),
   diff: false,
   always-show-lines: none,
 )
@@ -61,8 +59,6 @@
   show-line-numbers: default-code-info.show-line-numbers,
   start-line: default-code-info.start-line,
   highlighted-lines: default-code-info.highlighted-lines,
-  added-lines: default-code-info.added-lines,
-  deleted-lines: default-code-info.deleted-lines,
   diff: default-code-info.diff,
   always-show-lines: default-code-info.always-show-lines,
 ) = {
@@ -73,8 +69,6 @@
     show-line-numbers: show-line-numbers,
     start-line: start-line,
     highlighted-lines: highlighted-lines,
-    added-lines: added-lines,
-    deleted-lines: deleted-lines,
     always-show-lines: always-show-lines,
   ))
 }
@@ -145,8 +139,6 @@
     let start-line = cur-code-info.start-line
     let show-line-numbers = cur-code-info.show-line-numbers
     let highlighted-lines = cur-code-info.highlighted-lines
-    let added-lines = cur-code-info.added-lines
-    let deleted-lines = cur-code-info.deleted-lines
     let is-diff = cur-code-info.diff
     let always-show-lines = cur-code-info.always-show-lines
     let typst-line = line
@@ -213,7 +205,7 @@
           .to_show_lines
           .enumerate()
           .map(((index, line)) => {
-              let show-highlighted = highlighted-lines.contains(index)
+              let show-highlighted = highlighted-lines.contains(index + 1)
               let show-added = line.tag == "Insert"
               let show-deleted = line.tag == "Delete"
               let line-number-color = if show-added {
