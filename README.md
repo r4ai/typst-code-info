@@ -11,6 +11,13 @@ This is a library to display code blocks with extra information like captions, l
 
 ## Installation
 
+> [!warning]
+> Following are required to build and install:
+> 
+> - [Rust](https://www.rust-lang.org/)
+> - [Task](https://taskfile.dev/)
+> - [Deno](https://deno.com/)
+
 - **From local source**:
 
   Clone the repository and run the following command:
